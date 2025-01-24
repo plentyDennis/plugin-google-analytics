@@ -1,4 +1,4 @@
-<script>
+<script type="text/plain" data-cookie-consent="{{ config('GoogleAnalytics.consentGroup') }}.googleAnalytics">
     {% set shippingCosts = 0 %}
     {% set webstoreConfig = services.webstoreConfig.getWebstoreConfig() %}
     {% set useGross = config("GoogleAnalytics.submitGrossPrices") == "true" %}
@@ -8,38 +8,44 @@
         {% if data is defined %}
             {# Calculate shipping costs #}
             {% for item in data.order.orderItems %}
+
                 {% if item.typeId == 6 %}
                     {% if useGross %}
-                        {% set shippingCosts = shippingCosts + item.amounts[0].priceGross %}
+                    {% set shippingCosts = shippingCosts + item.amounts[0].priceGross %}
                     {% else %}
-                        {% set shippingCosts = shippingCosts + item.amounts[0].priceNet %}
+                    {% set shippingCosts = shippingCosts + item.amounts[0].priceNet %}
                     {% endif %}
                 {% endif %}
             {% endfor %}
-            
-            {# Calculate total value after subtracting shipping costs #}
+                gtag('consent', 'default', {
+                  'ad_storage': 'granted',
+                  'ad_user_data': 'granted',
+                  'ad_personalization': 'granted',
+                  'analytics_storage': 'granted'
+                });
+          {# Calculate total value after subtracting shipping costs #}
             {% set totalValue = useGross ? data.order.amounts[0].grossTotal - shippingCosts : data.order.amounts[0].netTotal - shippingCosts %}
 
             gtag("event", "purchase", {
                 transaction_id: "{{ data.order.id }}",
                 value: "{{ totalValue }}",
-                tax: "{{ data.order.amounts[0].vatTotal }}",
-                shipping: "{{ shippingCosts }}",
-                currency: "{{ data.order.amounts[0].currency }}",
-                items: [
-                    {% for item in data.order.orderItems %}
-                        {% if item.typeId == 1 %}
-                        {
-                            item_id: "{{ item.variation.number }}",
-                            item_name: "{{ item.orderItemName }}",
-                            affiliation: "{{ webstoreConfig.name }}",
-                            price: "{% if useGross %}{{ item.amounts[0].priceGross }}{% else %}{{ item.amounts[0].priceNet }}{% endif %}",
-                            quantity: "{{ item.quantity }}"
-                        },
-                        {% endif %}
-                    {% endfor %}
-                ]
-            });
+                    tax: "{{ data.order.amounts[0].vatTotal }}",
+                    shipping: "{{ shippingCosts }}",
+                    currency: "{{ data.order.amounts[0].currency }}",
+                    items: [
+                        {% for item in data.order.orderItems %}
+                            {% if item.typeId == 1 %}
+                            {
+                                item_id: "{{ item.variation.number }}",
+                                item_name: "{{ item.orderItemName }}",
+                                affiliation: "{{ webstoreConfig.name }}",
+                                price: "{% if useGross %}{{ item.amounts[0].priceGross }}{% else %}{{ item.amounts[0].priceNet }}{% endif %}",
+                                quantity: "{{ item.quantity }}"
+                            },
+                            {% endif %}
+                        {% endfor %}
+                    ]
+                });
         {% endif %}
     {% endif %}
 </script>
